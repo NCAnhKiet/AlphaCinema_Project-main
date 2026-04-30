@@ -30,6 +30,9 @@ public class DatVeService : IDatVeService
                 .FirstOrDefaultAsync(s => s.MaSuatChieu == request.MaSuatChieu)
                 ?? throw new Exception("Suất chiếu không tồn tại.");
 
+            if (suatChieu.ThoiGianBatDau < DateTime.Now)
+                throw new Exception("Suất chiếu đã bắt đầu hoặc kết thúc, không thể đặt vé.");
+
             // 2. Kiểm tra ghế hợp lệ trong phòng
             var ghes = await _context.Ghes
                 .Where(g => request.MaGheIds.Contains(g.MaGhe) && g.MaPhong == suatChieu.MaPhong)
@@ -156,6 +159,9 @@ public class DatVeService : IDatVeService
                 .FirstOrDefaultAsync(s => s.MaSuatChieu == request.MaSuatChieu)
                 ?? throw new Exception("Suất chiếu không tồn tại.");
 
+            if (suatChieu.ThoiGianBatDau < DateTime.Now)
+                throw new Exception("Suất chiếu đã bắt đầu hoặc kết thúc, không thể thanh toán.");
+
             // 2. Validate ghế
             var ghes = await _context.Ghes
                 .Where(g => request.MaGheIds.Contains(g.MaGhe) && g.MaPhong == suatChieu.MaPhong)
@@ -179,7 +185,26 @@ public class DatVeService : IDatVeService
                 throw new Exception("Ghế bạn chọn đã bị người khác hoàn tất đặt vé trước. Vui lòng thử lại.");
 
             // 3. Tính toán tiền và khuyến mãi
-            var tongTienGoc = ghes.Sum(g => g.LoaiGhe == "VIP" ? suatChieu.GiaVeGoc * 1.5m : suatChieu.GiaVeGoc);
+            var tongTienGhe = ghes.Sum(g => g.LoaiGhe == "VIP" ? suatChieu.GiaVeGoc * 1.5m : suatChieu.GiaVeGoc);
+            decimal concessionTotal = 0;
+            
+            List<Core.Entities.DoAnVat> dbConcessions = new();
+            if (request.Concessions != null && request.Concessions.Any())
+            {
+                var concessionIds = request.Concessions.Select(c => c.MaDoAnVat).ToList();
+                dbConcessions = await _context.DoAnVats
+                    .Where(d => concessionIds.Contains(d.MaDoAnVat))
+                    .ToListAsync();
+
+                foreach (var reqItem in request.Concessions)
+                {
+                    var dbItem = dbConcessions.FirstOrDefault(d => d.MaDoAnVat == reqItem.MaDoAnVat);
+                    if (dbItem != null)
+                        concessionTotal += reqItem.SoLuong * dbItem.Gia;
+                }
+            }
+
+            var tongDonHang = tongTienGhe + concessionTotal;
             decimal tienGiam = 0;
 
             if (!string.IsNullOrEmpty(request.MaCodeGiamGia))
@@ -190,14 +215,14 @@ public class DatVeService : IDatVeService
 
                 if (km != null)
                 {
-                    if (km.DonHangToiThieu.HasValue && tongTienGoc < km.DonHangToiThieu)
+                    if (km.DonHangToiThieu.HasValue && tongDonHang < km.DonHangToiThieu)
                         throw new Exception($"Đơn hàng tối thiểu {km.DonHangToiThieu:N0}đ để áp dụng mã này.");
 
-                    tienGiam = km.LoaiGiamGia == "PhanTram" ? tongTienGoc * km.GiaTriGiam / 100 : km.GiaTriGiam;
+                    tienGiam = km.LoaiGiamGia == "PhanTram" ? tongDonHang * km.GiaTriGiam / 100 : km.GiaTriGiam;
                     if (km.GiamToiDa.HasValue && tienGiam > km.GiamToiDa) tienGiam = km.GiamToiDa.Value;
                 }
             }
-            var tongTienSauGiam = tongTienGoc - tienGiam;
+            var tongTienSauGiam = Math.Max(0, tongDonHang - tienGiam);
 
             // 4. Cập nhật hoặc Tạo HoaDon
             Core.Entities.HoaDon? hoaDon;
@@ -264,8 +289,6 @@ public class DatVeService : IDatVeService
             }
 
             // 5.1 Xử lý đồ ăn vặt (Concessions)
-            decimal concessionTotal = 0;
-
             // Tự động thêm quà tặng từ mã khuyến mãi vào hóa đơn (nếu có)
             if (!string.IsNullOrEmpty(request.MaCodeGiamGia))
             {
@@ -289,11 +312,6 @@ public class DatVeService : IDatVeService
 
             if (request.Concessions != null && request.Concessions.Any())
             {
-                var concessionIds = request.Concessions.Select(c => c.MaDoAnVat).ToList();
-                var dbConcessions = await _context.DoAnVats
-                    .Where(d => concessionIds.Contains(d.MaDoAnVat))
-                    .ToListAsync();
-
                 foreach (var reqItem in request.Concessions)
                 {
                     var dbItem = dbConcessions.FirstOrDefault(d => d.MaDoAnVat == reqItem.MaDoAnVat);
@@ -307,12 +325,9 @@ public class DatVeService : IDatVeService
                             DonGia = dbItem.Gia
                         };
                         _context.HoaDonDoAnVats.Add(hdDav);
-                        concessionTotal += reqItem.SoLuong * dbItem.Gia;
                     }
                 }
             }
-            
-            hoaDon.TongTien += concessionTotal;
 
             // 6. Cộng điểm
             var nguoiDung = await _context.NguoiDungs.FindAsync(maNguoiDung);
@@ -324,7 +339,7 @@ public class DatVeService : IDatVeService
             return new DatVeResponse
             {
                 MaHoaDon = hoaDon.MaHoaDon,
-                TongTien = tongTienSauGiam + concessionTotal,
+                TongTien = tongTienSauGiam,
                 TienGiam = tienGiam,
                 PhuongThucThanhToan = request.PhuongThucThanhToan,
                 NgayGiaoDich = hoaDon.NgayGiaoDich,
@@ -391,9 +406,12 @@ public class DatVeService : IDatVeService
 
     public async Task HuyVeAsync(int maVe, int maNguoiDung)
     {
-        var ve = await _context.Ves.Include(v => v.HoaDon)
+        var ve = await _context.Ves.Include(v => v.HoaDon).Include(v => v.SuatChieu)
             .FirstOrDefaultAsync(v => v.MaVe == maVe)
             ?? throw new Exception("Vé không tồn tại.");
+
+        if (ve.SuatChieu.ThoiGianBatDau < DateTime.Now)
+            throw new Exception("Không thể hủy vé vì suất chiếu đã bắt đầu hoặc kết thúc.");
 
         if (ve.HoaDon.MaNguoiDung != maNguoiDung)
             throw new Exception("Bạn không có quyền hủy vé này.");

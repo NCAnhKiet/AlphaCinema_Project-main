@@ -45,6 +45,9 @@ public class KhuyenMaiService : IKhuyenMaiService
             ? request.TongTienGoc * km.GiaTriGiam / 100
             : km.GiaTriGiam;
 
+        if (km.GiamToiDa.HasValue && tienGiam > km.GiamToiDa.Value)
+            tienGiam = km.GiamToiDa.Value;
+
         decimal tongTienSauGiam = request.TongTienGoc - tienGiam;
         if (tongTienSauGiam < 0) tongTienSauGiam = 0;
 
