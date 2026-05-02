@@ -87,6 +87,7 @@
 </template>
 
 <script setup>
+import Swal from 'sweetalert2';
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
@@ -140,7 +141,7 @@ const checkEligibility = async () => {
 };
 
 const submitReview = async () => {
-  if (!newReview.value.binhLuan.trim()) return alert("Vui lòng nhập nội dung bình luận!");
+  if (!newReview.value.binhLuan.trim()) return Swal.fire("Vui lòng nhập nội dung bình luận!");
   submitting.value = true;
   try {
     const res = await movieApi.submitReview({
@@ -149,14 +150,14 @@ const submitReview = async () => {
       noiDung: newReview.value.binhLuan
     });
     if (res.success) {
-      alert("Cảm ơn bạn đã đánh giá!");
+      Swal.fire("Cảm ơn bạn đã đánh giá!");
       newReview.value.binhLuan = '';
       isEligible.value = false;
       hasAlreadyReviewed.value = true;
       await fetchReviews();
     }
   } catch (err) {
-    alert(err.response?.data?.message || "Lỗi khi gửi đánh giá.");
+    Swal.fire(err.response?.data?.message || "Lỗi khi gửi đánh giá.");
   } finally {
     submitting.value = false;
   }

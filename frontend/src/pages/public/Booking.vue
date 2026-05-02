@@ -535,6 +535,7 @@
 </template>
 
 <script setup>
+import Swal from 'sweetalert2';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
@@ -609,7 +610,7 @@ const handleSeatConfirmation = async () => {
             loadConcessions();
         }
     } catch (e) {
-        alert(e.message || 'Ghế đã có người chọn trước đó, vui lòng chọn ghế khác!');
+        Swal.fire(e.message || 'Ghế đã có người chọn trước đó, vui lòng chọn ghế khác!');
         // Refresh seats
         const resGhe = await bookingApi.getShowtimeSeats(selectedSuat.value.maSuatChieu);
         if (resGhe.success) ghes.value = resGhe.data;
@@ -771,7 +772,7 @@ const toggleSeat = (ghe) => {
   if (idx >= 0) {
     pickedSeats.value.splice(idx, 1);
   } else {
-    if (pickedSeats.value.length >= 8) { alert('Tối đa 8 ghế mỗi lần đặt!'); return; }
+    if (pickedSeats.value.length >= 8) { Swal.fire('Tối đa 8 ghế mỗi lần đặt!'); return; }
     pickedSeats.value.push(ghe);
   }
 };
@@ -814,7 +815,7 @@ const applyPromo = async () => {
 
 // ─── Confirm booking & show QR ───
 const confirmBooking = () => {
-  if (!payMethod.value) { alert('Vui lòng chọn phương thức thanh toán!'); return; }
+  if (!payMethod.value) { Swal.fire('Vui lòng chọn phương thức thanh toán!'); return; }
   
   // Generate VietQR URL (example info: MB Bank, Name: Alpha Cinema)
   const bankId = 'MB'; 
@@ -847,13 +848,13 @@ const handlePaymentSuccess = async () => {
       showQR.value = false;
       bookedResult.value = res.data;
       showBill.value = true;
-      // alert(`🎉 Thanh toán thành công!\nMã hóa đơn: #${res.data.maHoaDon}\nTổng tiền: ${res.data.tongTien?.toLocaleString()}đ`);
+      // Swal.fire(`🎉 Thanh toán thành công!\nMã hóa đơn: #${res.data.maHoaDon}\nTổng tiền: ${res.data.tongTien?.toLocaleString()}đ`);
       // router.push('/');
     }
     } catch(e) {
       console.error("Booking Error:", e);
       const msg = typeof e === 'string' ? e : (e.message || 'Lỗi hệ thống');
-      alert(`❌ LỖI THANH TOÁN:\n\n${msg}\n\nVui lòng báo nhân viên hoặc thử lại.`);
+      Swal.fire(`❌ LỖI THANH TOÁN:\n\n${msg}\n\nVui lòng báo nhân viên hoặc thử lại.`);
     } finally {
       booking.value = false;
     }

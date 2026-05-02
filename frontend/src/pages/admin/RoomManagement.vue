@@ -220,6 +220,7 @@
 </template>
 
 <script setup>
+import Swal from 'sweetalert2';
 import { ref, computed, onMounted, watch } from 'vue';
 import { adminApi } from '../../api/adminApi';
 
@@ -294,7 +295,7 @@ const saveRoomName = async () => {
       isEditingName.value = false;
       loadRooms();
     }
-  } catch(e) { alert('Lỗi: ' + e.message); }
+  } catch(e) { Swal.fire('Lỗi: ' + e.message); }
 };
 
 const handleCreateRoom = async () => {
@@ -311,18 +312,18 @@ const handleCreateRoom = async () => {
       await loadRooms();
       selectRoom(res.data.maPhong);
     }
-  } catch(e) { alert('Lỗi: ' + e.message); }
+  } catch(e) { Swal.fire('Lỗi: ' + e.message); }
 };
 
 const deleteRoom = async (id) => {
-  if (!confirm('Bạn có chắc muốn xóa phòng chiếu này?')) return;
+  if (!(await Swal.fire({ text: 'Bạn có chắc muốn xóa phòng chiếu này?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Đồng ý', cancelButtonText: 'Hủy' })).isConfirmed) return;
   try {
     const res = await adminApi.deleteRoom(id);
     if (res.success) {
       selectedRoom.value = null;
       loadRooms();
     }
-  } catch(e) { alert('Lỗi: ' + e.message); }
+  } catch(e) { Swal.fire('Lỗi: ' + e.message); }
 };
 
 const generateSeats = async () => {
@@ -334,7 +335,7 @@ const generateSeats = async () => {
     }
   } catch(e) { 
     console.error('Lỗi tạo ghế:', e);
-    alert('Lỗi: ' + (e.response?.data?.message || e.message)); 
+    Swal.fire('Lỗi: ' + (e.response?.data?.message || e.message)); 
   }
 };
 

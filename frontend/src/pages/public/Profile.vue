@@ -382,6 +382,7 @@
 </template>
 
 <script setup>
+import Swal from 'sweetalert2';
 import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '../../stores/auth';
 import { useToastStore } from '../../stores/toast';
@@ -442,7 +443,7 @@ const downloadTicket = async () => {
     link.click();
   } catch (err) {
     console.error("Download error:", err);
-    alert("Không thể tải ảnh vé. Vui lòng thử lại!");
+    Swal.fire("Không thể tải ảnh vé. Vui lòng thử lại!");
   } finally {
     isSaving.value = false;
   }
@@ -507,7 +508,7 @@ const loadRewards = async () => {
 };
 
 const handleRedeem = async (reward) => {
-  if (!confirm(`Bạn có chắc chắn muốn dùng ${reward.diemYeuCau} điểm để đổi "${reward.tenPhanThuong}"?`)) return;
+  if (!(await Swal.fire({ text: `Bạn có chắc chắn muốn dùng ${reward.diemYeuCau} điểm để đổi "${reward.tenPhanThuong}"?`, icon: 'warning', showCancelButton: true, confirmButtonText: 'Đồng ý', cancelButtonText: 'Hủy' })).isConfirmed) return;
   redeemingId.value = reward.maPhanThuong;
   try {
     const res = await promotionApi.redeemReward(reward.maPhanThuong);

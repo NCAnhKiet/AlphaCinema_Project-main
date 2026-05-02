@@ -198,7 +198,7 @@
                 <div class="form-group flex-1">
                   <label class="form-label">Giá Vé (VNĐ)</label>
                   <div class="price-input-group">
-                    <input type="number" v-model="formData.giaVeGoc" class="form-input" required min="10000" step="1000">
+                    <input type="text" :value="formatCurrency(formData.giaVeGoc)" @input="e => formData.giaVeGoc = parseCurrency(e.target.value)" class="form-input" required>
                     <span class="unit-text">đ</span>
                   </div>
                 </div>
@@ -225,6 +225,7 @@
 </template>
 
 <script setup>
+import Swal from 'sweetalert2';
 import { ref, onMounted, computed } from 'vue';
 import { movieApi } from '../../api/movieApi';
 import { adminApi } from '../../api/adminApi';
@@ -236,6 +237,17 @@ const toast = useToastStore();
 
 // --- UTILS ---
 const padStr = (n) => (n < 10 ? '0' + n : n);
+
+const formatCurrency = (val) => {
+  if (!val) return '';
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
+
+const parseCurrency = (val) => {
+  if (!val) return null;
+  const parsed = parseInt(val.toString().replace(/\./g, ''));
+  return isNaN(parsed) ? null : parsed;
+};
 const toISOStringForInput = (dateStr) => {
   if (!dateStr) return '';
   const d = new Date(dateStr);
@@ -313,7 +325,7 @@ async function fetchRooms() {
 }
 
 async function fetchShowtimes() {
-  loading.value = true;
+  if (showtimes.value.length === 0) loading.value = true;
   try {
     const res = await bookingApi.getShowtimes({
       maPhim: filterPhim.value,
@@ -454,7 +466,7 @@ const saveShowtime = async () => {
 };
 
 const deleteShowtime = async (id) => {
-  if (!confirm("Hành động này sẽ hủy suất chiếu và toàn bộ vé. Bạn chắc chắn?")) return;
+  if (!(await Swal.fire({ text: "Hành động này sẽ hủy suất chiếu và toàn bộ vé. Bạn chắc chắn?", icon: 'warning', showCancelButton: true, confirmButtonText: 'Đồng ý', cancelButtonText: 'Hủy' })).isConfirmed) return;
   try {
     await bookingApi.deleteShowtime(id);
     toast.add('Đã xóa suất chiếu thành công!', 'success');

@@ -14,14 +14,29 @@ Trước khi chạy dự án, hãy đảm bảo máy tính của bạn đã cài
 
 *(Lưu ý: Mặc định chuỗi kết nối SQL Server dùng `Server=.`. Nếu SQL Server của bạn có tên instance khác (ví dụ: `.\SQLEXPRESS`), hãy mở tệp `backend/src/AlphaCinema.API/appsettings.json` và điều chỉnh lại tại phần `DefaultConnection` trước khi chạy).*
 
-### 2. Khởi chạy hệ thống với 1 cú click
+### 2. Khởi chạy hệ thống
 
+**Cách 1: Chạy tự động (Khuyên dùng)**
 Chỉ cần **nhấn đúp chuột vào tệp `run-app.bat`** (nằm ở thư mục gốc của dự án).
+Script sẽ tự động:
+1. Cài đặt các gói thư viện cần thiết cho Frontend.
+2. Mở 1 cửa sổ mới chạy **Backend** (`dotnet run`).
+3. Mở 1 cửa sổ mới chạy **Frontend** (`npm run dev`).
+4. **Tự động tạo Database:** Ngay khi Backend khởi động lần đầu, hệ thống sẽ tự tạo Database `AlphaCinema` và **nạp sẵn toàn bộ dữ liệu mẫu** (Phim, phòng chiếu, ghế ngồi, v.v.).
 
-Khi bạn chạy tệp này, kịch bản (script) sẽ tự động thực hiện mọi thứ:
-1. Tự động chạy `npm install` để cài đặt các gói cần thiết cho ứng dụng.
-2. Tự động khởi chạy đồng thời cả Backend (ASP.NET Core) và Frontend (Vue.js).
-3. **Tự động tạo Database:** Ngay khi Backend khởi động lần đầu, nó sẽ tự động kết nối với SQL Server, tạo cơ sở dữ liệu `AlphaCinema`, tạo các bảng và **nạp sẵn toàn bộ dữ liệu mẫu** (Phim, phòng chiếu, suất chiếu, đồ ăn vặt, người dùng...).
+**Cách 2: Chạy thủ công dành cho lập trình viên**
+Mở 2 terminal riêng biệt:
+- **Terminal 1 (Backend):**
+  ```bash
+  cd backend/src/AlphaCinema.API
+  dotnet run
+  ```
+- **Terminal 2 (Frontend):**
+  ```bash
+  cd frontend
+  npm install
+  npm run dev
+  ```
 
 ### 3. Thông tin tài khoản đăng nhập mẫu
 

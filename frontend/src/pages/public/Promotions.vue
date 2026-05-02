@@ -5,21 +5,10 @@
       <p class="text-sub">Trải nghiệm điện ảnh đỉnh cao với những ưu đãi đặc quyền chỉ có tại Alpha Cinema.</p>
     </div>
 
-    <!-- Category Tabs -->
-    <div class="tabs-container glass-panel mb-5">
-      <button 
-        v-for="tab in tabs" :key="tab.id"
-        class="tab-btn" :class="{ active: activeTab === tab.id }"
-        @click="activeTab = tab.id"
-      >
-        <i :class="tab.icon"></i> {{ tab.name }}
-      </button>
-    </div>
-
     <!-- Promotion Grid -->
-    <div class="promotion-grid" v-if="filteredPromos.length > 0">
+    <div class="promotion-grid" v-if="sortedPromos.length > 0">
       <div 
-        v-for="promo in filteredPromos" :key="promo.id" 
+        v-for="promo in sortedPromos" :key="promo.id" 
         class="promo-card glass-panel animate-fade-in"
       >
         <div class="promo-image">
@@ -28,7 +17,6 @@
             :alt="promo.title"
             @error="e => e.target.src = 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&q=80&w=800'"
           >
-          <div class="promo-tag" :class="promo.type">{{ promo.tag }}</div>
           <div class="promo-overlay">
             <span class="view-details" @click="openDetails(promo)">Xem Chi Tiết</span>
           </div>
@@ -61,7 +49,6 @@
           <div class="modal-body">
             <div class="modal-img">
               <img :src="selectedPromo.image" :alt="selectedPromo.title">
-              <div class="modal-tag" :class="selectedPromo.type">{{ selectedPromo.tag }}</div>
             </div>
             
             <div class="modal-info">
@@ -129,23 +116,30 @@
 import { ref, computed, onMounted } from 'vue';
 import { promotionApi } from '../../api/promotionApi';
 
-const activeTab = ref('all');
+
+
 const promotions = ref([]);
 const loading = ref(true);
-
-const tabs = [
-  { id: 'all', name: 'Tất cả', icon: 'fas fa-th-large' },
-  { id: 'member', name: 'Thành Viên', icon: 'fas fa-user-shield' },
-  { id: 'ticket', name: 'Giá Vé', icon: 'fas fa-tags' },
-  { id: 'payment', name: 'Thanh Toán', icon: 'fas fa-credit-card' }
-];
 
 const getImageUrl = (name) => {
   if (!name) return 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&q=80&w=800';
   if (name.startsWith('http')) return name;
-  
-  // Dùng logic Vite-standard để map dynamic asset
   return new URL(`../../assets/promotions/${name}`, import.meta.url).href;
+};
+
+const getStatus = (km) => {
+  const now = new Date();
+  const start = new Date(km.ngayBatDau);
+  const end = new Date(km.ngayKetThuc);
+  if (now < start) return 'waiting';
+  if (now > end) return 'expired';
+  return 'active';
+};
+
+const getStatusText = (status) => {
+  if (status === 'waiting') return 'SẮP DIỄN RA';
+  if (status === 'expired') return 'HẾT HẠN';
+  return 'ĐANG CHẠY';
 };
 
 const loadPromotions = async () => {
@@ -163,8 +157,8 @@ const loadPromotions = async () => {
           image: getImageUrl(p.hinhAnh),
           startDate: formatDate(p.ngayBatDau),
           endDate: formatDate(p.ngayKetThuc),
-          tag: p.phanLoai || 'ƯU ĐÃI',
-          type: mapType(p.phanLoai),
+          status: getStatus(p),
+          statusText: getStatusText(getStatus(p)),
           voucher: p.maCodeGiamGia
         }));
     }
@@ -175,14 +169,7 @@ const loadPromotions = async () => {
   }
 };
 
-const mapType = (phanLoai) => {
-  if (!phanLoai) return 'member';
-  const val = phanLoai.toLowerCase();
-  if (val.includes('thành viên') || val.includes('member')) return 'member';
-  if (val.includes('giá vé') || val.includes('ticket') || val.includes('đồng giá')) return 'ticket';
-  if (val.includes('thanh toán') || val.includes('payment') || val.includes('vnpay')) return 'payment';
-  return 'member'; // default
-};
+
 
 const selectedPromo = ref(null);
 
@@ -203,9 +190,14 @@ const formatNewLines = (text) => {
 
 const formatDate = (date) => new Date(date).toLocaleDateString('vi-VN');
 
-const filteredPromos = computed(() => {
-  if (activeTab.value === 'all') return promotions.value;
-  return promotions.value.filter(p => p.type === activeTab.value);
+const sortedPromos = computed(() => {
+  return [...promotions.value].sort((a, b) => {
+    const order = { 'active': 1, 'waiting': 2, 'expired': 3 };
+    const aOrder = order[a.status] || 99;
+    const bOrder = order[b.status] || 99;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return b.id - a.id;
+  });
 });
 
 onMounted(() => {
@@ -216,37 +208,7 @@ onMounted(() => {
 <style scoped>
 .promotions-page { padding-bottom: 5rem; }
 
-.tabs-container {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  padding: 0.75rem;
-  margin-bottom: 3.5rem;
-}
 
-.tab-btn {
-  background: transparent;
-  border: none;
-  color: var(--color-text-sub);
-  padding: 0.8rem 2rem;
-  border-radius: var(--radius-md);
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  letter-spacing: 0.5px;
-}
-
-.tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
-.tab-btn.active {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-  color: #fff;
-  box-shadow: 0 8px 20px rgba(232, 136, 42, 0.3);
-}
 
 .promotion-grid {
   display: grid;
@@ -318,9 +280,9 @@ onMounted(() => {
   box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
-.promo-tag.member { background: linear-gradient(90deg, #f1c40f, #d35400); }
-.promo-tag.ticket { background: linear-gradient(90deg, #e67e22, #c0392b); }
-.promo-tag.payment { background: linear-gradient(90deg, #3498db, #2980b9); }
+.promo-tag.active { background: linear-gradient(90deg, #00b09b, #96c93d); color: white; }
+.promo-tag.waiting { background: linear-gradient(90deg, #f2994a, #f2c94c); color: #333; }
+.promo-tag.expired { background: linear-gradient(90deg, #cb2d3e, #ef473a); color: white; }
 
 .promo-content {
   padding: 2rem;
@@ -607,6 +569,9 @@ onMounted(() => {
   background: var(--color-primary);
   color: #fff;
 }
+.modal-tag.active { background: linear-gradient(90deg, #00b09b, #96c93d); color: white; }
+.modal-tag.waiting { background: linear-gradient(90deg, #f2994a, #f2c94c); color: #333; }
+.modal-tag.expired { background: linear-gradient(90deg, #cb2d3e, #ef473a); color: white; }
 
 .modal-info { padding: 3rem; }
 .modal-title { font-size: 1.8rem; font-weight: 900; margin-bottom: 0.5rem; line-height: 1.3; }

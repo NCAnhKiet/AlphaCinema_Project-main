@@ -58,7 +58,7 @@ const filters = ref({
 });
 
 const fetchMovies = async () => {
-  loading.value = true;
+  if (phims.value.length === 0) loading.value = true;
   try {
     const res = await movieApi.getMovies(filters.value);
     if (res.success) {

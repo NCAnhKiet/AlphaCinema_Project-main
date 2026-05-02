@@ -51,6 +51,7 @@
 </template>
 
 <script setup>
+import Swal from 'sweetalert2';
 import { ref, onMounted } from 'vue';
 import { movieApi } from '../../api/movieApi';
 
@@ -71,15 +72,15 @@ const loadReviews = async () => {
 };
 
 const deleteReview = async (id) => {
-  if (!confirm('Bạn có chắc chắn muốn xóa bình luận này?')) return;
+  if (!(await Swal.fire({ text: 'Bạn có chắc chắn muốn xóa bình luận này?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Đồng ý', cancelButtonText: 'Hủy' })).isConfirmed) return;
   try {
     const res = await movieApi.deleteReview(id);
     if (res.success) {
-      alert('Đã xóa đánh giá thành công');
+      Swal.fire('Đã xóa đánh giá thành công');
       loadReviews();
     }
   } catch (error) {
-    alert(error.message || 'Lỗi khi xóa đánh giá');
+    Swal.fire(error.message || 'Lỗi khi xóa đánh giá');
   }
 };
 

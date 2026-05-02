@@ -80,5 +80,6 @@ public class CreateKhuyenMaiRequestValidator : AbstractValidator<CreateKhuyenMai
         RuleFor(x => x.NgayKetThuc).GreaterThan(x => x.NgayBatDau).WithMessage("Ngày kết thúc phải sau ngày bắt đầu.");
         RuleFor(x => x.LoaiGiamGia).Must(l => new[] { "PhanTram", "CoDinh" }.Contains(l)).WithMessage("Loại giảm giá không hợp lệ.");
         RuleFor(x => x.GiaTriGiam).GreaterThan(0).WithMessage("Giá trị giảm phải lớn hơn 0.");
+        RuleFor(x => x.GiaTriGiam).LessThanOrEqualTo(100).When(x => x.LoaiGiamGia == "PhanTram").WithMessage("Giá trị giảm theo phần trăm không được vượt quá 100%.");
     }
 }

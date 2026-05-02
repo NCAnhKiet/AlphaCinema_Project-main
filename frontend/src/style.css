@@ -233,3 +233,8 @@ h1, h2, h3, h4, h5, h6 { font-weight: 700; line-height: 1.2; }
   color: var(--color-text-muted);
   font-size: 1.05rem;
 }
+
+/* Fix SweetAlert z-index */
+.swal2-container {
+  z-index: 99999 !important;
+}

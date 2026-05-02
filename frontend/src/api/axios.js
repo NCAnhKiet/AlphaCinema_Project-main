@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/auth';
+import router from '../routes/index';
 
 const api = axios.create({
   baseURL: 'http://localhost:5059/api',
@@ -29,7 +30,7 @@ api.interceptors.response.use(
     const authStore = useAuthStore();
     if (error.response && error.response.status === 401) {
       authStore.logout();
-      window.location.href = '/login'; // Redirect to login
+      router.push('/login'); // Redirect to login
     }
     return Promise.reject(error.response?.data || error.message);
   }

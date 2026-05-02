@@ -97,6 +97,7 @@
 </template>
 
 <script setup>
+import Swal from 'sweetalert2';
 import { ref, onMounted } from 'vue';
 import { movieApi } from '../../api/movieApi';
 
@@ -110,7 +111,7 @@ const seeding = ref(false);
 const formData = ref({});
 
 const fetchPhims = async () => {
-  loading.value = true;
+  if (phims.value.length === 0) loading.value = true;
   try {
     const res = await movieApi.getMovies();
     if (res.success) phims.value = res.data;
@@ -151,34 +152,34 @@ const savePhim = async () => {
     showModal.value = false;
     await fetchPhims(); // Refresh list
   } catch(e) {
-    alert(e.message || "Lỗi khi lưu phim");
+    Swal.fire(e.message || "Lỗi khi lưu phim");
   } finally {
     saving.value = false;
   }
 }
 
 const deletePhim = async (id) => {
-  if (confirm("Bạn có chắc chắn muốn xóa phim này? Mọi suất chiếu liên quan cũng sẽ bị ảnh hưởng.")) {
+  if ((await Swal.fire({ text: "Bạn có chắc chắn muốn xóa phim này? Mọi suất chiếu liên quan cũng sẽ bị ảnh hưởng.", icon: 'warning', showCancelButton: true, confirmButtonText: 'Đồng ý', cancelButtonText: 'Hủy' })).isConfirmed) {
     try {
       await movieApi.deleteMovie(id);
       await fetchPhims();
     } catch(e) {
-      alert("Lỗi khi xóa phim.");
+      Swal.fire("Lỗi khi xóa phim.");
     }
   }
 }
 
 const seedData = async () => {
-  if (confirm("Bạn có muốn tự động lấy dữ liệu từ hệ thống API TMDb và tạo sẵn phòng chiếu, suất chiếu mẫu không?")) {
+  if ((await Swal.fire({ text: "Bạn có muốn tự động lấy dữ liệu từ hệ thống API TMDb và tạo sẵn phòng chiếu, suất chiếu mẫu không?", icon: 'warning', showCancelButton: true, confirmButtonText: 'Đồng ý', cancelButtonText: 'Hủy' })).isConfirmed) {
     seeding.value = true;
     try {
       const res = await movieApi.seedMovies();
       if (res.success) {
-        alert("Đồng bộ hoàn tất! Dữ liệu đã được nạp vào hệ thống.");
+        Swal.fire("Đồng bộ hoàn tất! Dữ liệu đã được nạp vào hệ thống.");
         await fetchPhims();
       }
     } catch (e) {
-      alert("Có lỗi lúc đồng bộ.");
+      Swal.fire("Có lỗi lúc đồng bộ.");
     } finally {
       seeding.value = false;
     }

@@ -76,6 +76,7 @@
 </template>
 
 <script setup>
+import Swal from 'sweetalert2';
 import { ref, onMounted } from 'vue';
 import { adminApi } from '../../api/adminApi';
 import { useAuthStore } from '../../stores/auth';
@@ -119,25 +120,25 @@ const updateUser = async () => {
       vaiTro: editForm.value.vaiTro
     });
     if (res.success) {
-      alert('Cập nhật thành công!');
+      Swal.fire('Cập nhật thành công!');
       showModal.value = false;
       loadUsers();
     }
   } catch (error) {
-    alert(error.message || 'Lỗi cập nhật');
+    Swal.fire(error.message || 'Lỗi cập nhật');
   }
 };
 
 const deleteUser = async (id) => {
-  if (!confirm('Bạn có chắc chắn muốn xóa người dùng này?')) return;
+  if (!(await Swal.fire({ text: 'Bạn có chắc chắn muốn xóa người dùng này?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Đồng ý', cancelButtonText: 'Hủy' })).isConfirmed) return;
   try {
     const res = await adminApi.deleteUser(id);
     if (res.success) {
-      alert('Xóa thành công');
+      Swal.fire('Xóa thành công');
       loadUsers();
     }
   } catch (error) {
-    alert(error.message || 'Lỗi xóa');
+    Swal.fire(error.message || 'Lỗi xóa');
   }
 };
 

@@ -33,54 +33,58 @@
     </div>
     
     <div v-else class="promo-grid">
-      <div v-for="km in promotions" :key="km.maKhuyenMai" class="promo-card glass-panel-heavy" :class="getStatus(km)">
-        <div class="promo-card-header">
-          <div class="promo-category-badge" v-if="km.phanLoai">{{ km.phanLoai }}</div>
-          <div class="promo-badge" :class="getStatus(km)">
-            {{ getStatusText(km) }}
-          </div>
-          <div class="promo-actions">
-            <button class="action-btn edit" @click="openForm(km)"><i class="fas fa-edit"></i></button>
-            <button class="action-btn delete" @click="deletePromotion(km.maKhuyenMai)"><i class="fas fa-trash-alt"></i></button>
-          </div>
-        </div>
-
-        <div class="promo-poster-mini" v-if="km.hinhAnh">
+      <div v-for="km in sortedPromotions" :key="km.maKhuyenMai" class="promo-card glass-panel-heavy" :class="getStatus(km)">
+        
+        <div class="promo-poster-mini">
           <img :src="getImageUrl(km.hinhAnh)" alt="Promo Poster" />
-        </div>
-
-        <div class="promo-card-body">
-          <div class="promo-main-info">
-            <h3 class="promo-title">{{ km.tenKhuyenMai }}</h3>
-            <p class="promo-desc">{{ km.moTa || 'Chương trình ưu đãi Alpha Cinema' }}</p>
-          </div>
-
-          <div class="promo-coupon-box">
-            <div class="coupon-label">MÃ GIẢM GIÁ</div>
-            <div class="coupon-code" @click="copyCode(km.maCodeGiamGia)">
-              {{ km.maCodeGiamGia }}
-              <i class="far fa-copy ms-2"></i>
+          
+          <div class="promo-card-header">
+            <div class="promo-badges-wrap">
+              <div class="promo-badge" :class="getStatus(km)">
+                {{ getStatusText(km) }}
+              </div>
             </div>
-          </div>
-
-          <div class="promo-details">
-            <div class="detail-item">
-              <span class="detail-label">Mức giảm</span>
-              <span class="detail-value highlight">
-                {{ km.loaiGiamGia === 'PhanTram' ? km.giaTriGiam + '%' : km.giaTriGiam.toLocaleString() + 'đ' }}
-              </span>
-            </div>
-            <div class="detail-item" v-if="km.giamToiDa">
-              <span class="detail-label">Tối đa</span>
-              <span class="detail-value">{{ km.giamToiDa.toLocaleString() }}đ</span>
+            <div class="promo-actions">
+              <button class="action-btn edit" @click="openForm(km)"><i class="fas fa-edit"></i></button>
+              <button class="action-btn delete" @click="deletePromotion(km.maKhuyenMai)"><i class="fas fa-trash-alt"></i></button>
             </div>
           </div>
         </div>
 
-        <div class="promo-card-footer">
-          <div class="promo-period">
-            <i class="far fa-clock me-2"></i>
-            {{ formatDate(km.ngayBatDau) }} — {{ formatDate(km.ngayKetThuc) }}
+        <div class="promo-card-content">
+          <div class="promo-card-body">
+            <div class="promo-main-info">
+              <h3 class="promo-title">{{ km.tenKhuyenMai }}</h3>
+              <p class="promo-desc">{{ km.moTa || 'Chương trình ưu đãi Alpha Cinema' }}</p>
+            </div>
+
+            <div class="promo-coupon-box">
+              <div class="coupon-label">MÃ GIẢM GIÁ</div>
+              <div class="coupon-code" @click="copyCode(km.maCodeGiamGia)">
+                {{ km.maCodeGiamGia }}
+                <i class="far fa-copy ms-2"></i>
+              </div>
+            </div>
+
+            <div class="promo-details">
+              <div class="detail-item">
+                <span class="detail-label">Mức giảm</span>
+                <span class="detail-value highlight">
+                  {{ km.loaiGiamGia === 'PhanTram' ? km.giaTriGiam + '%' : km.giaTriGiam.toLocaleString() + 'đ' }}
+                </span>
+              </div>
+              <div class="detail-item" v-if="km.giamToiDa">
+                <span class="detail-label">Tối đa</span>
+                <span class="detail-value">{{ km.giamToiDa.toLocaleString() }}đ</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="promo-card-footer">
+            <div class="promo-period">
+              <i class="far fa-clock me-2"></i>
+              {{ formatDate(km.ngayBatDau) }} — {{ formatDate(km.ngayKetThuc) }}
+            </div>
           </div>
         </div>
       </div>
@@ -108,10 +112,7 @@
               <input type="text" v-model="form.tenKhuyenMai" placeholder="VD: Thứ 3 Vui Vẻ - Đồng giá 50k" required />
             </div>
 
-            <div class="field">
-              <label>Phân Loại (Badge)</label>
-              <input type="text" v-model="form.phanLoai" placeholder="VD: ƯU ĐÃI HOT, STUDENT DEAL..." />
-            </div>
+
 
             <div class="field">
               <label>Link Hình Ảnh (Poster)</label>
@@ -132,13 +133,18 @@
             </div>
 
             <div class="field">
-              <label>Giá Trị Giảm</label>
-              <input type="number" v-model="form.giaTriGiam" min="1" required :disabled="isEdit" />
+              <label>Giá Trị Giảm {{ form.loaiGiamGia === 'PhanTram' ? '(%)' : '(VNĐ)' }}</label>
+              <input type="text" :value="form.loaiGiamGia === 'PhanTram' ? form.giaTriGiam : formatCurrency(form.giaTriGiam)" @input="e => form.giaTriGiam = form.loaiGiamGia === 'PhanTram' ? Number(e.target.value) : parseCurrency(e.target.value)" required :disabled="isEdit" />
             </div>
 
             <div class="field">
               <label>Giảm Tối Đa (VNĐ)</label>
-              <input type="number" v-model="form.giamToiDa" placeholder="Không giới hạn" :disabled="isEdit" />
+              <input type="text" :value="formatCurrency(form.giamToiDa)" @input="e => form.giamToiDa = parseCurrency(e.target.value)" placeholder="Không giới hạn" :disabled="isEdit" />
+            </div>
+
+            <div class="field">
+              <label>Đơn Hàng Tối Thiểu (VNĐ)</label>
+              <input type="text" :value="formatCurrency(form.donHangToiThieu)" @input="e => form.donHangToiThieu = parseCurrency(e.target.value)" placeholder="0 = Không yêu cầu" />
             </div>
 
             <div class="field">
@@ -170,10 +176,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { promotionApi } from '../../api/promotionApi';
+import Swal from 'sweetalert2';
 
 const promotions = ref([]);
+const sortedPromotions = computed(() => {
+  return [...promotions.value].sort((a, b) => {
+    const order = { 'active': 1, 'waiting': 2, 'expired': 3 };
+    const aOrder = order[getStatus(a)] || 99;
+    const bOrder = order[getStatus(b)] || 99;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return b.maKhuyenMai - a.maKhuyenMai;
+  });
+});
 const loading = ref(true);
 const showModal = ref(false);
 const isEdit = ref(false);
@@ -185,6 +201,17 @@ const getImageUrl = (name) => {
   if (name.startsWith('http')) return name;
   // Nếu là file local thì map vào thư mục assets
   return new URL(`../../assets/promotions/${name}`, import.meta.url).href;
+};
+
+const formatCurrency = (val) => {
+  if (!val) return '';
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
+
+const parseCurrency = (val) => {
+  if (!val) return null;
+  const parsed = parseInt(val.toString().replace(/\./g, ''));
+  return isNaN(parsed) ? null : parsed;
 };
 
 const loadPromotions = async () => {
@@ -220,19 +247,36 @@ const openForm = (km = null) => {
       giaTriGiam: 0,
       giamToiDa: null,
       donHangToiThieu: 0,
-      hinhAnh: '',
-      phanLoai: ''
+      hinhAnh: ''
     };
   }
   showModal.value = true;
 };
 
 const savePromotion = async () => {
+  if (form.value.loaiGiamGia === 'PhanTram' && form.value.giaTriGiam > 100) {
+    Swal.fire('Lỗi', 'Mức giảm theo phần trăm không được vượt quá 100%!', 'error');
+    return;
+  }
+  if (form.value.ngayKetThuc < form.value.ngayBatDau) {
+    Swal.fire('Lỗi', 'Ngày kết thúc phải sau ngày bắt đầu!', 'error');
+    return;
+  }
+
   const confirmMsg = isEdit.value 
     ? "Bạn có chắc chắn muốn cập nhật các thông tin cho ưu đãi này?" 
     : "Xác nhận đăng ưu đãi mới? \n\nLưu ý: Sau khi đăng, bạn sẽ KHÔNG thể thay đổi Loại giảm giá, Giá trị giảm và Mức giảm tối đa để đảm bảo tính minh bạch cho khách hàng.";
     
-  if (!confirm(confirmMsg)) return;
+  const result = await Swal.fire({
+    title: 'Xác nhận',
+    text: confirmMsg,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Đồng ý',
+    cancelButtonText: 'Hủy'
+  });
+
+  if (!result.isConfirmed) return;
 
   try {
     let res;
@@ -244,22 +288,35 @@ const savePromotion = async () => {
     
     if (res.success) {
       showModal.value = false;
+      Swal.fire('Thành công', isEdit.value ? 'Đã cập nhật ưu đãi!' : 'Đã tạo ưu đãi mới!', 'success');
       loadPromotions();
     }
   } catch (error) {
-    alert(error.message || 'Lỗi lưu thông tin');
+    Swal.fire('Lỗi', error.message || 'Lỗi lưu thông tin', 'error');
   }
 };
 
 const deletePromotion = async (id) => {
-  if (!confirm('Bạn có chắc chắn muốn xóa mã này?')) return;
+  const result = await Swal.fire({
+    title: 'Xóa ưu đãi?',
+    text: 'Bạn có chắc chắn muốn xóa mã này không?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ff3366',
+    confirmButtonText: 'Xóa ngay',
+    cancelButtonText: 'Hủy'
+  });
+
+  if (!result.isConfirmed) return;
+
   try {
     const res = await promotionApi.deletePromotion(id);
     if (res.success) {
+      Swal.fire('Đã xóa', 'Ưu đãi đã được xóa thành công.', 'success');
       loadPromotions();
     }
   } catch (error) {
-    alert(error.message || 'Lỗi khi xóa');
+    Swal.fire('Lỗi', error.message || 'Lỗi khi xóa', 'error');
   }
 };
 
@@ -284,7 +341,13 @@ const getStatusText = (km) => {
 
 const copyCode = (code) => {
   navigator.clipboard.writeText(code);
-  alert('Đã copy mã: ' + code);
+  Swal.fire({
+    title: 'Đã copy!',
+    text: 'Đã copy mã: ' + code,
+    icon: 'success',
+    timer: 1500,
+    showConfirmButton: false
+  });
 };
 
 onMounted(() => {
@@ -338,11 +401,12 @@ onMounted(() => {
 
 .promo-card {
   border-radius: 28px;
-  padding: 2rem;
   transition: 0.4s;
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
 }
 
 .promo-card:hover {
@@ -353,34 +417,6 @@ onMounted(() => {
 .promo-card.expired { opacity: 0.5; filter: grayscale(0.6); }
 .promo-card.waiting { opacity: 0.8; border-color: rgba(232, 136, 42, 0.1); }
 
-.promo-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.promo-badge {
-  font-size: 0.65rem; font-weight: 900; padding: 4px 12px;
-  border-radius: 50px; text-transform: uppercase;
-}
-.promo-badge.active { background: rgba(0,230,118,0.1); color: #00e676; }
-.promo-badge.waiting { background: rgba(232, 136, 42, 0.1); color: #e8882a; }
-.promo-badge.expired { background: rgba(255,51,102,0.1); color: #ff3366; }
-
-.promo-category-badge {
-  position: absolute;
-  top: 1.5rem;
-  left: 2rem;
-  background: var(--color-primary);
-  color: white;
-  padding: 4px 12px;
-  border-radius: 6px;
-  font-size: 0.7rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  z-index: 10;
-}
 
 .promo-poster-mini {
   width: calc(100% + 4rem);
@@ -400,18 +436,60 @@ onMounted(() => {
   transform: scale(1.1);
 }
 
+.promo-card-header {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  z-index: 10;
+}
+
+.promo-badges-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.promo-badge {
+  font-size: 0.65rem; font-weight: 900; padding: 4px 12px;
+  border-radius: 50px; text-transform: uppercase;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+.promo-badge.active { background: #00e676; color: #000; }
+.promo-badge.waiting { background: #e8882a; color: #fff; }
+.promo-badge.expired { background: #ff3366; color: #fff; }
+
+
+
 .promo-actions { display: flex; gap: 0.6rem; position: relative; z-index: 20; }
 .action-btn {
   width: 32px; height: 32px; border-radius: 8px;
-  background: rgba(255,255,255,0.05); border: none;
-  color: #666; cursor: pointer; transition: 0.2s;
+  background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2);
+  color: #fff; cursor: pointer; transition: 0.2s;
 }
 .action-btn.edit:hover { background: #4fc3f7; color: white; }
 .action-btn.delete:hover { background: #ff3366; color: white; }
 
+.promo-card-content {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.promo-card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
 .promo-main-info { margin-bottom: 1.5rem; }
-.promo-title { font-size: 1.3rem; font-weight: 800; color: white; margin-bottom: 0.2rem; }
-.promo-desc { font-size: 0.85rem; color: #666; line-height: 1.4; height: 2.4rem; overflow: hidden; }
+.promo-title { font-size: 1.3rem; font-weight: 800; color: white; margin-bottom: 0.4rem; line-height: 1.3; }
+.promo-desc { font-size: 0.85rem; color: #aaa; line-height: 1.5; height: 2.5rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 
 .promo-coupon-box {
   background: rgba(0,0,0,0.25);
@@ -420,11 +498,12 @@ onMounted(() => {
   padding: 1rem; text-align: center; margin-bottom: 1.5rem;
 }
 .coupon-label { font-size: 0.6rem; color: #888; font-weight: 700; margin-bottom: 0.2rem; }
-.coupon-code { font-family: 'Space Mono', monospace; font-size: 1.4rem; font-weight: 900; color: #e8882a; cursor: pointer; }
+.coupon-code { font-family: 'Space Mono', monospace; font-size: 1.4rem; font-weight: 900; color: #e8882a; cursor: pointer; transition: 0.2s; }
+.coupon-code:hover { color: #ff5722; transform: scale(1.05); }
 
 .promo-details { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .detail-item { display: flex; flex-direction: column; }
-.detail-label { font-size: 0.65rem; color: #555; text-transform: uppercase; }
+.detail-label { font-size: 0.65rem; color: #777; text-transform: uppercase; margin-bottom: 4px; }
 .detail-value { font-weight: 800; font-size: 0.95rem; color: #ccc; }
 .detail-value.highlight { color: #00e676; font-size: 1.2rem; }
 

@@ -90,6 +90,14 @@ public class KhuyenMaiService : IKhuyenMaiService
     public async Task<KhuyenMaiResponse> UpdateAsync(int id, CreateKhuyenMaiRequest request)
     {
         var km = await _context.KhuyenMais.FindAsync(id) ?? throw new Exception("Khuyến mãi không tồn tại.");
+        
+        if (km.MaCodeGiamGia != request.MaCodeGiamGia)
+        {
+            if (await _context.KhuyenMais.AnyAsync(k => k.MaCodeGiamGia == request.MaCodeGiamGia))
+                throw new Exception("Mã code đã tồn tại. Vui lòng chọn mã khác.");
+            km.MaCodeGiamGia = request.MaCodeGiamGia;
+        }
+
         km.TenKhuyenMai = request.TenKhuyenMai; km.MoTa = request.MoTa;
         km.NgayBatDau = request.NgayBatDau; km.NgayKetThuc = request.NgayKetThuc;
         km.LoaiGiamGia = request.LoaiGiamGia; km.GiaTriGiam = request.GiaTriGiam;
