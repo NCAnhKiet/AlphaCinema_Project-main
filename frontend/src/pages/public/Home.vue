@@ -78,11 +78,12 @@
           <div class="mcard-info">
             <p class="mcard-genre">{{ phim.theLoai }}</p>
             <h3 class="mcard-title">{{ phim.tenPhim }}</h3>
-            <!-- Doanh thu ẩn theo yêu cầu -->
-            <div class="mcard-rating" v-if="phim.diemTrungBinh > 0">
-              ⭐ {{ phim.diemTrungBinh.toFixed(1) }} <span class="review-count">({{ phim.soLuongDanhGia }} đánh giá)</span>
+            <!-- Hiển thị đánh giá sao và số vé đã bán -->
+            <div class="mcard-rating" v-if="phim.diemTrungBinh > 0 || (phim.soVeDaBan && phim.soVeDaBan > 0)">
+              <span v-if="phim.diemTrungBinh > 0">⭐ {{ phim.diemTrungBinh.toFixed(1) }} <span class="review-count">({{ phim.soLuongDanhGia }})</span></span>
+              <span v-if="phim.diemTrungBinh > 0 && phim.soVeDaBan > 0"> &bull; </span>
+              <span v-if="phim.soVeDaBan > 0" class="ticket-count">🎟 {{ phim.soVeDaBan }} vé</span>
             </div>
-            <!-- Ẩn nếu chưa có đánh giá -->
           </div>
         </router-link>
       </div>
@@ -170,7 +171,12 @@ const sapChieu  = computed(() => allPhims.value.filter(p => p.trangThaiPhim === 
 
 const topMovies = computed(() => {
   return [...allPhims.value]
-    .sort((a, b) => b.doanhThu - a.doanhThu)
+    .sort((a, b) => {
+      // Tính điểm tổng hợp: Lượt đánh giá sao (nhân hệ số) + Số lượng đặt vé
+      const scoreA = (a.diemTrungBinh * 20) + (a.soVeDaBan || 0);
+      const scoreB = (b.diemTrungBinh * 20) + (b.soVeDaBan || 0);
+      return scoreB - scoreA;
+    })
     .slice(0, 4);
 });
 

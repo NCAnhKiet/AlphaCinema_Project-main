@@ -12,6 +12,7 @@ public class PhimResponse
     public double DiemTrungBinh { get; set; }
     public int SoLuongDanhGia { get; set; }
     public decimal DoanhThu { get; set; }
+    public int SoVeDaBan { get; set; }
 }
 
 public class CreatePhimRequest

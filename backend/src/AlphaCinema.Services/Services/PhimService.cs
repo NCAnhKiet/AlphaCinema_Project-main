@@ -41,7 +41,8 @@ public class PhimService : IPhimService
             TrangThaiPhim = p.TrangThaiPhim,
             DiemTrungBinh = p.DanhGias.Any() ? p.DanhGias.Average(d => d.DiemSo) : 0,
             SoLuongDanhGia = p.DanhGias.Count(),
-            DoanhThu = p.SuatChieus.Sum(s => s.Ves.Where(v => v.TrangThai != "Đã hủy").Sum(v => v.GiaVe))
+            DoanhThu = p.SuatChieus.Sum(s => s.Ves.Where(v => v.TrangThai != "Đã hủy").Sum(v => v.GiaVe)),
+            SoVeDaBan = p.SuatChieus.Sum(s => s.Ves.Count(v => v.TrangThai != "Đã hủy"))
         }).ToListAsync();
     }
 
@@ -60,7 +61,8 @@ public class PhimService : IPhimService
             TrangThaiPhim = p.TrangThaiPhim,
             DiemTrungBinh = p.DanhGias.Any() ? p.DanhGias.Average(d => d.DiemSo) : 0,
             SoLuongDanhGia = p.DanhGias.Count(),
-            DoanhThu = p.SuatChieus.Sum(s => s.Ves.Where(v => v.TrangThai != "Đã hủy").Sum(v => v.GiaVe))
+            DoanhThu = p.SuatChieus.Sum(s => s.Ves.Where(v => v.TrangThai != "Đã hủy").Sum(v => v.GiaVe)),
+            SoVeDaBan = p.SuatChieus.Sum(s => s.Ves.Count(v => v.TrangThai != "Đã hủy"))
         };
     }
 
